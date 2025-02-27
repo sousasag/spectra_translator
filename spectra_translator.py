@@ -90,7 +90,10 @@ def get_deltalambdaR_sampling2(wavei, wavef, pixel_sampling=2.7, delta_sampling=
     while wave[-1] < wavef:
         wave.append(wave[-1] + wave[-1]/R/sampling[i])
         i+=1
-    return np.array(wave)
+    wave = np.array(wave)
+    sampling = sampling[:len(wave)]
+    dll = (wave+(wave/R/sampling)/2)-(wave-(wave/R/sampling)/2)
+    return wave, dll
 
 
 def simple_norm(wave, flux, iterations=4):
@@ -147,7 +150,7 @@ def get_HRMOS_bands(spectral_data, R=HRMOS_R, pixel_samplint=HRMOS_pixel_samplin
         blaze = blaze_model(wave[ib1], model='curved')
         w, f, f8, e, b = wave[ib1], flux[ib1], flux80000[ib1], error[ib1], blaze
 
-        waves_int = get_deltalambdaR_sampling2(w[0], w[-1], pixel_sampling=HRMOS_pixel_sampling, R=R) 
+        waves_int, dll = get_deltalambdaR_sampling2(w[0], w[-1], pixel_sampling=HRMOS_pixel_sampling, R=R) 
         f8_int = np.interp(waves_int, w, f8)
         e_int  = np.interp(waves_int, w, e)
         b_int  = np.interp(waves_int, w, b)
@@ -163,7 +166,7 @@ def get_HRMOS_bands(spectral_data, R=HRMOS_R, pixel_samplint=HRMOS_pixel_samplin
             plt.plot(w, f, 'b-', label="Input")
             plt.plot(w, f8, 'r--p', label="Broadened curve (full)") 
             plt.show()
-        bands_spec.append((waves_int,fluxo,erroro,b_int,quality_int))
+        bands_spec.append((waves_int, fluxo, erroro, b_int, dll, quality_int))
     return bands_spec
 
 def espresso2HRMOS(filein, fileout):
@@ -184,13 +187,14 @@ def espresso2HRMOS(filein, fileout):
     hduold = fits.open(filein)
     #hduold[-1].header['EXTNAME'] = "ESPRESSO"
     hduold.pop(1)
-    for i, (waves_int,flux,error,b_int, quality_int) in enumerate(bands_spec):
+    for i, (waves_int,flux,error,b_int, dll, quality_int) in enumerate(bands_spec):
         col1 = fits.Column(name='wavelength', format = '1D', unit = 'angstrom', array=waves_int)
         col2 = fits.Column(name='flux'      , format = '1D', unit = 'e-'      , array=flux)
         col3 = fits.Column(name='error'     , format = '1D', unit = 'e-'      , array=error)
         col4 = fits.Column(name='blaze'     , format = '1D', unit = 'REL'     , array=b_int)
-        col5 = fits.Column(name='quality'   , format = '1D', unit = ''        , array=quality_int)
-        coldefs = fits.ColDefs([col1, col2, col3, col4, col5])
+        col5 = fits.Column(name='dll'       , format = '1D', unit = 'angstrom', array=dll)
+        col6 = fits.Column(name='quality'   , format = '1D', unit = ''        , array=quality_int)
+        coldefs = fits.ColDefs([col1, col2, col3, col4, col5, col6])
         hdu = fits.BinTableHDU.from_columns(coldefs)
         hdu.header['EXTNAME'] = HRMOS_bandsName[i]
         hdu.header['SNR'] = HRMOS_SNRPeak[i]
@@ -202,7 +206,7 @@ def espresso2HRMOS(filein, fileout):
 
 ### Main program:
 def main():
-    filein = "spectra/ESPRESSO/r.ESPRE.2018-04-29T04:18:01.286_S1D_A.fits"
+    filein = "spectra/ESPRESSO/r.ESPRE.2018-04-28T04:25:28.525_S1D_A.fits"
     fileout = "output_spectra/" + get_hrmos_filename(filein)
     espresso2HRMOS(filein, fileout)
 
