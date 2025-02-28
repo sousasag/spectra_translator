@@ -83,7 +83,7 @@ def get_deltalambdaR_sampling2(wavei, wavef, pixel_sampling=2.7, delta_sampling=
     """
     Get the wavelenght array for an averaged fixed delta sampling assuming a decreasing dll for a given order (similar to ESPRESSO)
     """
-    npoints = (wavef-wavei) / ((wavef+wavei)/2/R) * pixel_sampling
+    npoints = 1.2* (wavef-wavei) / ((wavef+wavei)/2/R) * pixel_sampling
     sampling=np.arange(npoints)/npoints*delta_sampling*2+(pixel_sampling-delta_sampling)
     wave = [wavei]
     i=0
@@ -169,7 +169,7 @@ def get_HRMOS_bands(spectral_data, R=HRMOS_R, pixel_samplint=HRMOS_pixel_samplin
         bands_spec.append((waves_int, fluxo, erroro, b_int, dll, quality_int))
     return bands_spec
 
-def espresso2HRMOS(filein, fileout):
+def espresso2HRMOS(filein, fileout, peakSNR=100):
     """
     Read an S1D ESPRESSO FILE and generate a simulated HRMOS spectrum
     """
@@ -177,12 +177,12 @@ def espresso2HRMOS(filein, fileout):
     res_ori = 140000
     if header["HIERARCH ESO INS MODE"] == "SINGLEUHR":
         res_ori = 190000
-    fluxR       = convolve_data(wave, flux, res_ori, HRMOS_R)
+    #fluxR       = convolve_data(wave, flux, res_ori, HRMOS_R)
     fluxR = flux.copy()
 
 
     spectral_data = (wave, flux, fluxR, error, quality, header)
-    bands_spec = get_HRMOS_bands(spectral_data, R=HRMOS_R)
+    bands_spec = get_HRMOS_bands(spectral_data, R=HRMOS_R, peakSNR=peakSNR)
 
     hduold = fits.open(filein)
     #hduold[-1].header['EXTNAME'] = "ESPRESSO"
@@ -199,6 +199,7 @@ def espresso2HRMOS(filein, fileout):
         hdu.header['EXTNAME'] = HRMOS_bandsName[i]
         hdu.header['SNR'] = HRMOS_SNRPeak[i]
         hdu.header['RES'] = HRMOS_R
+        hdu.header['PixSamp'] = HRMOS_pixel_sampling
         hduold.append(hdu)
     hduold.writeto(fileout, overwrite=True)
 
@@ -206,9 +207,9 @@ def espresso2HRMOS(filein, fileout):
 
 ### Main program:
 def main():
-    filein = "spectra/ESPRESSO/r.ESPRE.2018-04-28T04:25:28.525_S1D_A.fits"
+    filein = "spectra/ESPRESSO/r.ESPRE.2023-10-23T01:55:05.930_S1D_A.fits"
     fileout = "output_spectra/" + get_hrmos_filename(filein)
-    espresso2HRMOS(filein, fileout)
+    espresso2HRMOS(filein, fileout, peakSNR=-1)
 
 
 if __name__ == "__main__":
