@@ -177,8 +177,8 @@ def espresso2HRMOS(filein, fileout, peakSNR=100):
     res_ori = 140000
     if header["HIERARCH ESO INS MODE"] == "SINGLEUHR":
         res_ori = 190000
-    #fluxR       = convolve_data(wave, flux, res_ori, HRMOS_R)
-    fluxR = flux.copy()
+    fluxR       = convolve_data(wave, flux, res_ori, HRMOS_R)
+    #fluxR = flux.copy()
 
 
     spectral_data = (wave, flux, fluxR, error, quality, header)
@@ -209,7 +209,7 @@ def espresso2HRMOS(filein, fileout, peakSNR=100):
 def main():
     filein = "spectra/ESPRESSO/r.ESPRE.2023-10-23T01:55:05.930_S1D_A.fits"
     fileout = "output_spectra/" + get_hrmos_filename(filein)
-    espresso2HRMOS(filein, fileout, peakSNR=-1)
+    espresso2HRMOS(filein, fileout, peakSNR=100)
 
 
 if __name__ == "__main__":
