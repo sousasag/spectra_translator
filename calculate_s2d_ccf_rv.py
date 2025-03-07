@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-#HRMOS_bandsName = ['UVB', 'G', 'R1', 'R2']
-HRMOS_bandsName = ['UVB', 'G', 'R2']
+HRMOS_bandsName = ['UVB', 'G', 'R1', 'R2']
 
 
 #imports:
@@ -109,25 +108,32 @@ def espdr_compute_CCF_fast(ll, dll, flux, error, blaze, quality, RV_table,
     return ccf_flux, ccf_error, ccf_quality
 
 
-def calculate_hrmos_ccf(hrmosfile, rvarray, bands='all',
+def calculate_s2d_ccf(s2dfile, rvarray, order='all',
                       mask_file='ESPRESSO_G2.fits', mask=None, mask_width=0.5,
                       debug=False):
 
-    with fits.open(hrmosfile) as hdu:
+    with fits.open(s2dfile) as hdu:
 
-        if bands == 'all':
+        if order == 'all':
             if debug:
                 print('can only debug one order at a time...')
                 return
-            bandsNames = HRMOS_bandsName
+            orders = range(hdu[1].data.shape[0])
             return_sum = True
         else:
-            assert isinstance(bands in HRMOS_bandsName, bool), 'band should be in the list'+ HRMOS_bandsName
-            bandsNames = [bands]
+            assert isinstance(order, int), 'order should be integer'
+            orders = (order, )
             return_sum = False
 
         BERV = hdu[0].header['HIERARCH ESO QC BERV']
         BERVMAX = hdu[0].header['HIERARCH ESO QC BERVMAX']
+
+        #dllfile = hdu[0].header['HIERARCH ESO PRO REC1 CAL7 NAME']
+        #blazefile = hdu[0].header['HIERARCH ESO PRO REC1 CAL13 NAME']
+        #print('need', dllfile)
+        #print('need', blazefile)
+
+        #dllfile = glob(dllfile + '*')[0]
 
         # CCF mask
         if mask is None:
@@ -137,48 +143,47 @@ def calculate_hrmos_ccf(hrmosfile, rvarray, bands='all',
             assert 'lambda' in mask, 'mask must contain the "lambda" key'
             assert 'contrast' in mask, 'mask must contain the "contrast" key'
 
-#        # get the flux correction stored in the S2D file
-#        keyword = 'HIERARCH ESO QC ORDER%d FLUX CORR'
-#        flux_corr = [hdu[0].header[keyword % (o + 1)] for o in range(170)]
+        # get the flux correction stored in the S2D file
+        keyword = 'HIERARCH ESO QC ORDER%d FLUX CORR'
+        flux_corr = [hdu[0].header[keyword % (o + 1)] for o in range(170)]
 
         ccfs, ccfes = [], []
 
-#        with fits.open(dllfile) as hdu_dll:
-#            dll_array = hdu_dll[1].data
+        #with fits.open(dllfile) as hdu_dll:
+        #    dll_array = hdu_dll[1].data
 
-#        with fits.open(blazefile) as hdu_blaze:
-#            blaze_array = hdu_blaze[1].data
+        dll_array = fits.getdata(s2dfile,extname="DLLDATA_AIR_BARY")
+        #with fits.open(blazefile) as hdu_blaze:
+        #    blaze_array = hdu_blaze[1].data
 
-        for band in bandsNames:
+        ds2dblazed = fits.getdata(s2dfile.replace("S2D_A","S2D_BLAZE_A"),extname="SCIDATA")
+        ds2d = fits.getdata(s2dfile,extname="SCIDATA")
+        blaze_array = ds2dblazed/ds2d
 
-#        dllfile = hdu[0].header['HIERARCH ESO PRO REC1 CAL7 NAME']
-#        blazefile = hdu[0].header['HIERARCH ESO PRO REC1 CAL13 NAME']
-#        print('need', dllfile)
-#        print('need', blazefile)
-
+        for order in orders:
             # WAVEDATA_AIR_BARY
-            ll = hdu[band].data['wavelength']
+            ll = hdu[5].data[order, :]
             # mean w
-            #llc = np.mean(hdu[5].data, axis=1)
+            llc = np.mean(hdu[5].data, axis=1)
 
-            dll = hdu[band].data['dll']
-#            # fit an 8th degree polynomial to the flux correction
-#            corr_model = np.polyval(np.polyfit(llc, flux_corr, 7), llc)
+            dll = dll_array[order, :]
+            # fit an 8th degree polynomial to the flux correction
+            corr_model = np.polyval(np.polyfit(llc, flux_corr, 7), llc)
 
-            flux = hdu[band].data['flux']
-            error = hdu[band].data['error']
-            quality = hdu[band].data['quality']
+            flux = hdu[1].data[order, :]
+            error = hdu[2].data[order, :]
+            quality = hdu[3].data[order, :]
 
-            blaze = hdu[band].data['blaze']
+            blaze = blaze_array[order, :]
 
-            y = flux * blaze #/ corr_model[order]
+            y = flux * blaze / corr_model[order]
             # y = np.loadtxt('flux_in_pipeline_order0.txt')
-            ye = error * blaze# / corr_model[order]
+            ye = error * blaze / corr_model[order]
 
             if debug:
                 return ll, dll, y, ye, blaze, quality, rvarray, mask, BERV, BERVMAX
 
-            print('calculating ccf (band %s)...' % band)
+            print('calculating ccf (order %d)...' % order)
             ccf, ccfe, _ = espdr_compute_CCF_fast(ll, dll, y, ye, blaze, quality,
                                                   rvarray, mask, BERV, BERVMAX,
                                                   mask_width=mask_width)
@@ -189,11 +194,10 @@ def calculate_hrmos_ccf(hrmosfile, rvarray, bands='all',
         ccf = np.concatenate([ccfs, np.array(ccfs).sum(axis=0, keepdims=True)])
         #ccfe = np.concatenate([ccfes, np.zeros(len(rvarray)).reshape(1, -1)])
         ccfe = np.concatenate([ccfes, np.sqrt((np.array(ccfes)**2).sum(axis=0, keepdims=True))])
-        return ccf, ccfe
         # what to do with the errors?
-#        return np.array(ccfs), np.array(ccfes)
+        return ccf, ccfe
     else:
-        return np.array(ccfs[0]), np.array(ccfes[0])
+        return np.array(ccfs), np.array(ccfes)
 
 
 def _gauss_initial_guess(x, y):
@@ -367,14 +371,14 @@ def getRVerror(rv, ccf, eccf):
 
 ### Main program:
 def main():
-    hrmosfile = 'output_spectra/TauCeti100/r.HRMOS.2023-01-14T01:37:01.620.fits'
-    vstart = -50
+    espresso_S2D_file = 'spectra/ESPRESSO/S2D/r.ESPRE.2018-04-28T04:25:28.525_S2D_A.fits'
+    vstart = -40
     vstep = 0.5
-    size = 160
+    size = 81
     mask_width = 0.5
     rvarray = np.arange(vstart,vstart+vstep*size,vstep)
 
-    ccf, ccfe = calculate_hrmos_ccf(hrmosfile, rvarray, bands='all',
+    ccf, ccfe = calculate_s2d_ccf(espresso_S2D_file, rvarray, order='all',
                       mask_file='data/ESPRESSO_G2.fits', mask=None, mask_width = mask_width,
                       debug=False)
 #    print(rvarray, ccf)
@@ -382,9 +386,12 @@ def main():
     for i, c in enumerate(ccf):
         ec = ccfe[i]
         plt.plot(rvarray, c)
-        RV = getRV(rvarray, c)
-        eRV = getRVerror(rvarray, c, ec)
-        print(RV, eRV)
+        try:
+            RV = getRV(rvarray, c)
+            eRV = getRVerror(rvarray, c, ec)
+            print(i, RV, eRV)
+        except:
+            print("Error in order", i)
     plt.show()
 
 

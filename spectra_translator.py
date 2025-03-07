@@ -7,6 +7,7 @@ from astropy.io import fits
 from matplotlib import pyplot as plt
 import numpy as np
 from PyAstronomy import pyasl
+import glob
 
 
 # My functions:
@@ -207,9 +208,11 @@ def espresso2HRMOS(filein, fileout, peakSNR=100):
 
 ### Main program:
 def main():
-    filein = "spectra/ESPRESSO/r.ESPRE.2023-10-23T01:55:05.930_S1D_A.fits"
-    fileout = "output_spectra/" + get_hrmos_filename(filein)
-    espresso2HRMOS(filein, fileout, peakSNR=100)
+    filein = "spectra/ESPRESSO/TauCeti/r.ESPRE.2023-01-08T01:30:19.668_S1D_A.fits"
+    files = glob.glob("spectra/ESPRESSO/TauCeti/*.fits")
+    for filein in files:
+        fileout = "output_spectra/TauCeti100/" + get_hrmos_filename(filein)
+        espresso2HRMOS(filein, fileout, peakSNR=100)
 
 
 if __name__ == "__main__":
