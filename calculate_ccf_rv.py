@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 #HRMOS_bandsName = ['UVB', 'G', 'R1', 'R2']
-HRMOS_bandsName = ['UVB', 'G', 'R2']
+HRMOS_bandsName = ['B', 'G', 'R2']
 
 
 #imports:
@@ -12,6 +12,7 @@ from bisect import bisect_left
 from astropy.io import fits
 import numpy as np
 from matplotlib import pyplot as plt
+import glob
 
 from numpy import exp, log, sqrt
 from scipy import optimize
@@ -368,10 +369,10 @@ def getRVerror(rv, ccf, eccf):
 ### Main program:
 def main():
     hrmosfile = 'output_spectra/TauCeti100/r.HRMOS.2023-01-14T01:37:01.620.fits'
-    vstart = -50
-    vstep = 0.5
-    size = 160
-    mask_width = 0.5
+    vstart = -60
+    vstep = 1
+    size = 180
+    mask_width = 1
     rvarray = np.arange(vstart,vstart+vstep*size,vstep)
 
     ccf, ccfe = calculate_hrmos_ccf(hrmosfile, rvarray, bands='all',
@@ -387,8 +388,38 @@ def main():
         print(RV, eRV)
     plt.show()
 
+    files = glob.glob("output_spectra/TauCeti100/*.fits")
+    rvs_list = []
+    for hrmosfile in files:
+        print("Processing", hrmosfile)
+        ccf, ccfe = calculate_hrmos_ccf(hrmosfile, rvarray, bands='all',
+                      mask_file='data/ESPRESSO_G2.fits', mask=None, mask_width = mask_width,
+                      debug=False)
+        c = ccf[-1]
+        ec = ccfe[-1]
+#        plt.plot(rvarray, c)
+#        plt.show()
+        RV = getRV(rvarray, c)
+        eRV = getRVerror(rvarray, c, ec)
+        print(RV, eRV)
+        rvo = fits.getheader(hrmosfile)['HIERARCH ESO QC CCF RV']
+        ervo = fits.getheader(hrmosfile)['HIERARCH ESO QC CCF RV ERROR']
+        rvs_list.append((hrmosfile, RV, eRV, rvo, ervo))
 
+    print(rvs_list)
 
+    rvs = np.array([r[1] for r in rvs_list]) 
+    ervs = np.array([r[2] for r in rvs_list])
+    rvos = np.array([r[3] for r in rvs_list]) 
+    ervos = np.array([r[4] for r in rvs_list])
+    plt.errorbar(range(len(rvs)), rvs, yerr=ervs, fmt='o')
+    plt.errorbar(range(len(rvs)), rvos, yerr=ervos, fmt='x')
+    plt.show()
+
+    print(np.std(rvs))
+    print(np.mean(ervs))
+    print(np.std(rvos))
+    print(np.mean(ervos))
 
 if __name__ == "__main__":
     main()

@@ -21,9 +21,9 @@ HRMOS_bands = [ (383,417),
                 (623,677),
                 ]
 
-HRMOS_bandsName = ['UVB', 'G', 'R1', 'R2']
+HRMOS_bandsName = ['B', 'G', 'R1', 'R2']
 
-HRMOS_SNRPeak = [100,100,100,100]
+HRMOS_SNR_3600_V9 = [680,1080,1200,1328]
 
 def get_ESPRESSO_spectra(filename):
     # Get the ESPRESSO spectra
@@ -144,7 +144,8 @@ def get_HRMOS_bands(spectral_data, R=HRMOS_R, pixel_samplint=HRMOS_pixel_samplin
     """
     wave, flux, flux80000, error, quality, header = spectral_data
     bands_spec = []
-    for bi,bf in HRMOS_bands:
+    snr_bands = compute_snrs_bands(peakSNR)
+    for i, (bi,bf) in enumerate(HRMOS_bands):
         bi *= 10
         bf *= 10
         ib1 = np.where((wave > bi) & (wave < bf))
@@ -157,7 +158,7 @@ def get_HRMOS_bands(spectral_data, R=HRMOS_R, pixel_samplint=HRMOS_pixel_samplin
         b_int  = np.interp(waves_int, w, b)
         quality_int = np.zeros(len(waves_int))  # quality zero for all pixels at the momment
         if peakSNR > 0:
-            fluxn, errorn, snr_out = add_noise(waves_int, f8_int, e_int, b_int, snr_center_out=peakSNR)
+            fluxn, errorn, snr_out = add_noise(waves_int, f8_int, e_int, b_int, snr_center_out=snr_bands[i])
             fluxo = fluxn
             erroro = errorn
         else:
@@ -188,6 +189,7 @@ def espresso2HRMOS(filein, fileout, peakSNR=100):
     hduold = fits.open(filein)
     #hduold[-1].header['EXTNAME'] = "ESPRESSO"
     hduold.pop(1)
+    snr_bands = compute_snrs_bands(peakSNR)
     for i, (waves_int,flux,error,b_int, dll, quality_int) in enumerate(bands_spec):
         col1 = fits.Column(name='wavelength', format = '1D', unit = 'angstrom', array=waves_int)
         col2 = fits.Column(name='flux'      , format = '1D', unit = 'e-'      , array=flux)
@@ -198,21 +200,31 @@ def espresso2HRMOS(filein, fileout, peakSNR=100):
         coldefs = fits.ColDefs([col1, col2, col3, col4, col5, col6])
         hdu = fits.BinTableHDU.from_columns(coldefs)
         hdu.header['EXTNAME'] = HRMOS_bandsName[i]
-        hdu.header['SNR'] = HRMOS_SNRPeak[i]
+        hdu.header['SNR'] = snr_bands[i]
         hdu.header['RES'] = HRMOS_R
         hdu.header['PixSamp'] = HRMOS_pixel_sampling
         hduold.append(hdu)
     hduold.writeto(fileout, overwrite=True)
 
-
+def compute_snrs_bands(SNR_R2):
+    """
+    Compute the SNR for the HRMOS bands
+    """
+    snrs = []
+    for i in range(4):
+        snrs.append(SNR_R2 * HRMOS_SNR_3600_V9[i] / HRMOS_SNR_3600_V9[-1])
+    return snrs
 
 ### Main program:
 def main():
     filein = "spectra/ESPRESSO/TauCeti/r.ESPRE.2023-01-08T01:30:19.668_S1D_A.fits"
     files = glob.glob("spectra/ESPRESSO/TauCeti/*.fits")
+
+    SNR_R2 = 100
+    print(compute_snrs_bands(SNR_R2)) 
     for filein in files:
         fileout = "output_spectra/TauCeti100/" + get_hrmos_filename(filein)
-        espresso2HRMOS(filein, fileout, peakSNR=100)
+        espresso2HRMOS(filein, fileout, peakSNR=SNR_R2)
 
 
 if __name__ == "__main__":
