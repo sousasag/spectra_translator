@@ -421,5 +421,12 @@ def main():
     print(np.std(rvos))
     print(np.mean(ervos))
 
+    fileout = open("RVs.txt", "w")
+    fileout.write(f"{"File"}\t{"RV_hrmos"}\t{"eRV_hrmos"}\t{"RVo"}\t{"eRVo"}\n")
+    fileout.write(f"{"----"}\t{"--------"}\t{"---------"}\t{"---"}\t{"----"}\n")
+    for r in rvs_list:
+        fileout.write(f"{r[0]}\t{r[1]} \t{r[2]}\t{r[3]}\t{r[4]}\n")
+    fileout.close()
+
 if __name__ == "__main__":
     main()
