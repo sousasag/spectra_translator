@@ -394,8 +394,8 @@ def main():
         eRV = getRVerror(rvarray, c, ec)
         print(RV, eRV)
 
-    return
-    files = glob.glob("output_spectra/TauCeti100/*.fits")
+#    return
+    files = glob.glob("output_spectra/TauCeti50/*.fits")
     rvs_list = []
     for hrmosfile in files:
         print("Processing", hrmosfile)
@@ -428,7 +428,7 @@ def main():
     print(np.std(rvos))
     print(np.mean(ervos))
 
-    fileout = open("RVs.txt", "w")
+    fileout = open("RVs_50.txt", "w")
     fileout.write(f"{"File"}\t{"RV_hrmos"}\t{"eRV_hrmos"}\t{"RVo"}\t{"eRVo"}\n")
     fileout.write(f"{"----"}\t{"--------"}\t{"---------"}\t{"---"}\t{"----"}\n")
     for r in rvs_list:

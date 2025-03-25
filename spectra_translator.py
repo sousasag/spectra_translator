@@ -220,10 +220,10 @@ def main():
     filein = "spectra/ESPRESSO/TauCeti/r.ESPRE.2023-01-08T01:30:19.668_S1D_A.fits"
     files = glob.glob("spectra/ESPRESSO/TauCeti/*.fits")
 
-    SNR_R2 = 100
+    SNR_R2 = 50
     print(compute_snrs_bands(SNR_R2)) 
     for filein in files:
-        fileout = "output_spectra/TauCeti100/" + get_hrmos_filename(filein)
+        fileout = "output_spectra/TauCeti50/" + get_hrmos_filename(filein)
         espresso2HRMOS(filein, fileout, peakSNR=SNR_R2)
 
 
