@@ -127,8 +127,13 @@ def calculate_hrmos_ccf(hrmosfile, rvarray, bands='all',
             bandsNames = [bands]
             return_sum = False
 
-        BERV = hdu[0].header['HIERARCH ESO QC BERV']
-        BERVMAX = hdu[0].header['HIERARCH ESO QC BERVMAX']
+        try:
+            BERV = hdu[0].header['HIERARCH ESO QC BERV']
+            BERVMAX = hdu[0].header['HIERARCH ESO QC BERVMAX']
+        except:
+            print("No BERV in header")
+            BERV = 0
+            BERVMAX = 0
 
         # CCF mask
         if mask is None:
@@ -369,7 +374,8 @@ def getRVerror(rv, ccf, eccf):
 ### Main program:
 def main():
     hrmosfile = 'output_spectra/TauCeti100/r.HRMOS.2023-01-14T01:37:01.620.fits'
-    vstart = -60
+    hrmosfile = 'output_spectra/synthetic/spec3.fits'
+    vstart = -40
     vstep = 1
     size = 180
     mask_width = 1
@@ -383,11 +389,12 @@ def main():
     for i, c in enumerate(ccf):
         ec = ccfe[i]
         plt.plot(rvarray, c)
+        plt.show()
         RV = getRV(rvarray, c)
         eRV = getRVerror(rvarray, c, ec)
         print(RV, eRV)
-    plt.show()
 
+    return
     files = glob.glob("output_spectra/TauCeti100/*.fits")
     rvs_list = []
     for hrmosfile in files:

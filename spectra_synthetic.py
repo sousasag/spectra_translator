@@ -118,8 +118,8 @@ def add_noise(wave, flux, error, blaze, snr_center_out=100):
     Add noise to the spectrum
     """
     snr_orig = flux / error
-    snr_orig = 10000
-    error = error * 0
+#    snr_orig = 10000
+#    error = error * 0
     if snr_center_out >= np.max(snr_orig):
         print ("WARNING: Problem with the SNR: Original data has lower SNR")
         return flux, error, snr_orig
@@ -217,12 +217,25 @@ def compute_snrs_bands(SNR_R2):
         snrs.append(SNR_R2 * HRMOS_SNR_3600_V9[i] / HRMOS_SNR_3600_V9[-1])
     return snrs
 
+def correct_lambda(ll, rv):
+    """Corrects a wavelenght array with a given radial velocity (Km/s)"""
+    ll=ll/(1.+rv/299792.458)
+    return ll
 
-def create_synth_spec(filein, fileout, peakSNR=100):
-    wave, flux, eflux = np.loadtxt(filein, unpack=True)
+def add_rv_lambda(ll, rv):
+    """Corrects a wavelenght array with a given radial velocity (Km/s)"""
+    ll=ll/(1.-rv/299792.458)
+    return ll
+
+
+def create_synth_spec(filein, fileout, peakSNR=100, RV=0):
+    wave, fluxn, flux = np.loadtxt(filein, unpack=True)
+    wave = add_rv_lambda(wave, RV)
+    snr_ori=10000   #Assuming a very high SNR for the synthetic spectra
+    eflux = flux/snr_ori
     res_ori = 1000000 # synthetic resolution -> to very high...
-    #fluxR       = convolve_data(wave, flux, res_ori, HRMOS_R)
-    fluxR = flux.copy()
+    fluxR       = convolve_data(wave, flux, res_ori, HRMOS_R)
+    #fluxR = flux.copy()
 
     header = fits.Header()
     quality = np.zeros(len(wave))
@@ -251,9 +264,10 @@ def create_synth_spec(filein, fileout, peakSNR=100):
 ### Main program:
 def main():
     filein = "spectra/synthetic/hrmos.rv_5700_g4.40_z0.0_xi1.10.dat"
-    SNR_R2 = 100
-    fileout = "output_spectra/synthetic/spec1.fits"
-    create_synth_spec(filein, fileout, peakSNR=SNR_R2)
+    SNR_R2 = 500
+    RV = 18.3
+    fileout = "output_spectra/synthetic/spec3.fits"
+    create_synth_spec(filein, fileout, peakSNR=SNR_R2, RV=RV)
 
 if __name__ == "__main__":
     main()
