@@ -257,16 +257,35 @@ def create_synth_spec(filein, fileout, peakSNR=100, RV=0):
         hdu.header['SNR'] = snr_bands[i]
         hdu.header['RES'] = HRMOS_R
         hdu.header['PixSamp'] = HRMOS_pixel_sampling
+        hdu.header['RV_input'] = RV
         hduold.append(hdu)
     hduold.writeto(fileout, overwrite=True)
 
 
+
+def make_spectra_set(snr = 100):
+    """
+    Create a set of spectra
+    """
+    files = glob.glob("spectra/synthetic/*.dat")
+    for file in files:
+        name = file.split('/')[-1]
+        name = name.replace('.dat', '')
+        fileout = "output_spectra/synthetic/HRMOS_" + name + "_snr"+ str(snr)+".fits"
+        create_synth_spec(file, fileout, peakSNR=snr, RV=10.9)
+
+
+
 ### Main program:
 def main():
-    filein = "spectra/synthetic/hrmos.rv_5700_g4.40_z0.0_xi1.10.dat"
-    SNR_R2 = 500
-    RV = 18.3
-    fileout = "output_spectra/synthetic/spec3.fits"
+    #make_spectra_set(snr=50)
+    #make_spectra_set(snr=100)
+    #make_spectra_set(snr=500)
+    #return
+    filein = "spectra/synthetic/hrmos.rv_4500_g2.50_z-1.50_xi1.50.dat"
+    SNR_R2 = 5
+    RV = 10.9
+    fileout = "output_spectra/synthetic/HRMOS_rv10.9_SNR05_4500_g2.50_z-1.50_xi1.50.fits"
     create_synth_spec(filein, fileout, peakSNR=SNR_R2, RV=RV)
 
 if __name__ == "__main__":

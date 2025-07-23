@@ -1,0 +1,9 @@
+File	RV_hrmos	eRV_hrmos	RVo	eRVo
+----	--------	---------	---	----
+output_spectra/synthetic/HRMOS_hrmos.rv_4500_g2.50_z-1.50_xi1.50_snr500.fits	10.534006397621946 	0.0006857183536385355	10.9	0
+output_spectra/synthetic/HRMOS_hrmos.rv_4500_g2.50_z-1.50_xi1.50_snr100.fits	10.53545242696263 	0.0034245069956608636	10.9	0
+output_spectra/synthetic/HRMOS_hrmos.rv_4500_g2.50_z-1.50_xi1.50_snr50.fits	10.535685230714572 	0.00686368844683556	10.9	0
+output_spectra/synthetic/HRMOS_hrmos.rv_4500_g2.50_z-1.50_xi1.50_snr40.fits	10.53807523304036 	0.008620895899418037	10.9	0
+output_spectra/synthetic/HRMOS_hrmos.rv_4500_g2.50_z-1.50_xi1.50_snr20.fits	10.515162332597605 	0.017056961413966103	10.9	0
+output_spectra/synthetic/HRMOS_hrmos.rv_4500_g2.50_z-1.50_xi1.50_snr10.fits	10.53749016262635 	0.03357056639811197	10.9	0
+output_spectra/synthetic/HRMOS_hrmos.rv_4500_g2.50_z-1.50_xi1.50_snr05.fits	10.482962632724526 	0.06243835252387711	10.9	0

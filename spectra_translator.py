@@ -22,8 +22,42 @@ HRMOS_bands = [ (383,417),
                 ]
 
 HRMOS_bandsName = ['B', 'G', 'R1', 'R2']
+HRMOS_bandsWaveCentral = [400, 520, 575, 650]
 
+# SNR relation from the ETC, with ADC
 HRMOS_SNR_3600_V9 = [680,1080,1200,1328]
+
+NO_ADC = True
+airmass = 2.0
+
+def get_flux_loss(wavei, airmass=1.5):
+    """
+    Get the flux loss for a given wavelength and airmass when no ADC is used.
+    """
+    wave1, floss1 = np.loadtxt("data/HRMOS_ETC/flux_loss_no_ADC_airmass1.txt", unpack=True, skiprows=1)
+    wave2, floss2 = np.loadtxt("data/HRMOS_ETC/flux_loss_no_ADC_airmass1.5.txt", unpack=True, skiprows=1)
+
+    fl1 = np.interp(wavei, wave1, floss1)
+    fl2 = np.interp(wavei, wave2, floss2)
+    flux_loss = (fl2-fl1)/0.5*(airmass-1)+ fl1  # linear interpolation between the two values
+    return flux_loss
+
+
+def adjust_SNR_no_ADC(SNR_bands, wave_central, airmass=1.5):
+    """
+    Adjust the SNR for the HRMOS bands without ADC
+    """
+    SNR_bands_no_ADC = []
+    for i, snr in enumerate(SNR_bands):
+            wavei = wave_central[i]
+            flux_loss = get_flux_loss(wavei, airmass)
+            print(i, wavei,flux_loss, snr)
+            SNR_bands_no_ADC.append(snr * np.sqrt(1 -flux_loss/100))
+    return SNR_bands_no_ADC
+
+if NO_ADC:
+    HRMOS_SNR_3600_V9 = adjust_SNR_no_ADC(HRMOS_SNR_3600_V9, HRMOS_bandsWaveCentral, airmass=airmass)
+
 
 def get_ESPRESSO_spectra(filename):
     # Get the ESPRESSO spectra
@@ -217,7 +251,16 @@ def compute_snrs_bands(SNR_R2):
 
 ### Main program:
 def main():
+
+
+
     filein = "spectra/ESPRESSO/TauCeti/r.ESPRE.2023-01-08T01:30:19.668_S1D_A.fits"
+    fileout = "output_spectra/TauCeti50NOADC/" + get_hrmos_filename(filein)
+    SNR_R2 = 50
+    espresso2HRMOS(filein, fileout, peakSNR=SNR_R2)
+    return
+
+
     files = glob.glob("spectra/ESPRESSO/TauCeti/*.fits")
 
     SNR_R2 = 50

@@ -375,27 +375,65 @@ def getRVerror(rv, ccf, eccf):
 def main():
     hrmosfile = 'output_spectra/TauCeti100/r.HRMOS.2023-01-14T01:37:01.620.fits'
     hrmosfile = 'output_spectra/synthetic/spec3.fits'
-    vstart = -40
+    hrmosfile = 'output_spectra/synthetic/HRMOS_hrmos.rv_5700_g4.40_z0.0_xi1.10_snr100.fits'
+    vstart = -50
     vstep = 1
     size = 180
     mask_width = 1
     rvarray = np.arange(vstart,vstart+vstep*size,vstep)
 
-    ccf, ccfe = calculate_hrmos_ccf(hrmosfile, rvarray, bands='all',
-                      mask_file='data/ESPRESSO_G2.fits', mask=None, mask_width = mask_width,
-                      debug=False)
+
+#    hrmosfiles = glob.glob("output_spectra/synthetic/HRMOS_rv*4500_g2.50_z-1.50_xi1.50.fits")
+#    print(hrmosfiles)
+#    teff = [hfile.split("_")[3] for hfile in hrmosfiles]
+#    teff = [hfile.split("_")[4] for hfile in hrmosfiles]
+#    rvs_list = []
+#    for i in range(len(hrmosfiles)):
+#        if float(teff[i]) < 5600:
+#            mask = 'data/ESPRESSO_K6.fits'
+#        elif float(teff[i]) < 6300:
+#            mask = 'data/ESPRESSO_G2.fits'
+#        else:
+#            mask = 'data/ESPRESSO_F9.fits'
+
+#        ccf, ccfe = calculate_hrmos_ccf(hrmosfiles[i], rvarray, bands='all',
+#                      mask_file=mask, mask=None, mask_width = mask_width,
+#                      debug=False)
+#        c = ccf[-1]
+#        ec = ccfe[-1]
+#        RV = getRV(rvarray, c)
+#        eRV = getRVerror(rvarray, c, ec)
+#        print(RV, eRV)
+#        rvo = 10.9
+#        ervo = 0
+#        rvs_list.append((hrmosfiles[i], RV, eRV, rvo, ervo))
+
+#    fileout = open("RVs_synths_metalpoor.txt", "w")
+#    fileout.write(f"{"File"}\t{"RV_hrmos"}\t{"eRV_hrmos"}\t{"RVo"}\t{"eRVo"}\n")
+#    fileout.write(f"{"----"}\t{"--------"}\t{"---------"}\t{"---"}\t{"----"}\n")
+#    for r in rvs_list:
+#        fileout.write(f"{r[0]}\t{r[1]} \t{r[2]}\t{r[3]}\t{r[4]}\n")
+#    fileout.close()
+
+#    return  
+
+#    hrmosfile = 'output_spectra/TauCeti50NOADC/r.HRMOS.2023-01-08T01:30:19.668.fits'
+#    ccf, ccfe = calculate_hrmos_ccf(hrmosfile, rvarray, bands='all',
+#                      mask_file='data/ESPRESSO_G2.fits', mask=None, mask_width = mask_width,
+#                      debug=False)
 #    print(rvarray, ccf)
-    print(ccf.shape)
-    for i, c in enumerate(ccf):
-        ec = ccfe[i]
-        plt.plot(rvarray, c)
-        plt.show()
-        RV = getRV(rvarray, c)
-        eRV = getRVerror(rvarray, c, ec)
-        print(RV, eRV)
+#    print(ccf.shape)
+#    for i, c in enumerate(ccf):
+#        ec = ccfe[i]
+#        plt.plot(rvarray, c)
+#        plt.show()
+#        RV = getRV(rvarray, c)
+#        eRV = getRVerror(rvarray, c, ec)
+#        print(RV, eRV)
 
 #    return
     files = glob.glob("output_spectra/TauCeti50/*.fits")
+    files = glob.glob("output_spectra/TauCeti50NOADC/*.fits")
     rvs_list = []
     for hrmosfile in files:
         print("Processing", hrmosfile)
@@ -428,7 +466,7 @@ def main():
     print(np.std(rvos))
     print(np.mean(ervos))
 
-    fileout = open("RVs_50.txt", "w")
+    fileout = open("RVs_50NOADC.txt", "w")
     fileout.write(f"{"File"}\t{"RV_hrmos"}\t{"eRV_hrmos"}\t{"RVo"}\t{"eRVo"}\n")
     fileout.write(f"{"----"}\t{"--------"}\t{"---------"}\t{"---"}\t{"----"}\n")
     for r in rvs_list:
